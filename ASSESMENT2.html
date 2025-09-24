@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Listing - Retail Store</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f9fafb;
+            line-height: 1.6;
+        }
+
+        /* Container */
+        .container {
+            max-width: 384px;
+            margin: 0 auto;
+            background-color: white;
+            min-height: 100vh;
+        }
+
+        /* Header Styles */
+        .header {
+            padding: 24px 16px 16px 16px;
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            width: 20px;
+            height: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 40px;
+            background-color: #f3f4f6;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            background-color: white;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+
+        /* Sort and Filter Row */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sort-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sort-icon, .filter-icon {
+            width: 16px;
+            height: 16px;
+            color: #4b5563;
+        }
+
+        .sort-select {
+            font-size: 14px;
+            color: #374151;
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            color: #374151;
+            background: none;
+            border: none;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .filter-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .filter-badge.visible {
+            display: flex;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            display: none;
+        }
+
+        .modal-overlay.visible {
+            display: block;
+        }
+
+        .modal-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border-radius: 8px 8px 0 0;
+            padding: 16px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .close-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Category List */
+        .category-list {
+            margin-bottom: 16px;
+        }
+
+        .category-item {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .category-item:hover {
+            background-color: #f9fafb;
+        }
+
+        .category-item.active {
+            background-color: #eff6ff;
+            border-color: #60a5fa;
+        }
+
+        .category-name {
+            font-weight: 500;
+        }
+
+        .clear-filters-btn {
+            width: 100%;
+            padding: 12px;
+            color: #2563eb;
+            background: none;
+            border: none;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Loading State */
+        .loading-container {
+            text-align: center;
+            padding: 48px 0;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* No Results */
+        .no-results {
+            text-align: center;
+            padding: 48px 16px;
+            display: none;
+        }
+
+        .no-results.visible {
+            display: block;
+        }
+
+        .no-results-icon {
+            width: 64px;
+            height: 64px;
+            color: #d1d5db;
+            margin: 0 auto 16px auto;
+        }
+
+        .no-results-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .no-results-text {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* Product Grid */
+        .product-grid {
+            padding: 0 16px 24px 16px;
+            display: none;
+        }
+
+        .product-grid.visible {
+            display: block;
+        }
+
+        .products-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .product-card {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .product-card:hover {
+            transform: scale(1.02);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .product-image-container {
+            aspect-ratio: 1;
+            background-color: #f3f4f6;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        .product-info {
+            padding: 12px;
+        }
+
+        .product-name {
+            font-weight: 500;
+            color: #111827;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .product-price {
+            color: #2563eb;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile-First Container -->
+    <div class="container">
+        <!-- Header with Search -->
+        <div class="header">
+            <!-- Search Bar -->
+            <div class="search-container">
+                <div class="search-icon">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input 
+                    id="search-input"
+                    type="text" 
+                    placeholder="Shoes"
+                    class="search-input"
+                >
+            </div>
+
+            <!-- Sort and Filter Row -->
+            <div class="controls-row">
+                <!-- Sort Dropdown -->
+                <div class="sort-container">
+                    <svg class="sort-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    <select id="sort-select" class="sort-select">
+                        <option value="name-asc">Sort</option>
+                        <option value="name-asc">Name A-Z</option>
+                        <option value="name-desc">Name Z-A</option>
+                        <option value="price-asc">Price Low-High</option>
+                        <option value="price-desc">Price High-Low</option>
+                    </select>
+                </div>
+
+                <!-- Filter Button -->
+                <button id="filter-btn" class="filter-btn">
+                    <svg class="filter-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                    Filter
+                    <div id="filter-badge" class="filter-badge">1</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Modal Overlay -->
+        <div id="filter-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Filter by Category</h3>
+                    <button id="close-filter" class="close-btn">
+                        <svg class="close-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="category-list" class="category-list">
+                    <!-- Categories will be populated here -->
+                </div>
+                <button id="clear-filters-btn" class="clear-filters-btn">
+                    Clear all filters
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-container">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading products...</p>
+        </div>
+
+        <!-- No Results -->
+        <div id="no-results" class="no-results">
+            <svg class="no-results-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-3.5m-9 0h-3.5" />
+            </svg>
+            <h3 class="no-results-title">No products found</h3>
+            <p class="no-results-text">Try adjusting your search or filter criteria</p>
+        </div>
+
+        <!-- Product Grid -->
+        <div id="product-grid" class="product-grid">
+            <div class="products-container" id="products-container">
+                <!-- Products will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management Object
+        const AppState = {
+            products: [],
+            filteredProducts: [],
+            searchQuery: '',
+            selectedCategory: '',
+            sortBy: 'name-asc',
+            loading: false,
+            categories: []
+        };
+
+        // Mock product data
+        const mockProducts = [
+            {
+                id: 1,
+                name: "Nike Red",
+                brand: "Nike",
+                price: 116.00,
+                category: "Running",
+                image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&h=300&fit=crop&crop=center"
+            },
+            {
+                id: 2,
+                name: "Adidas",
+                brand: "Adidas",
+                price: 140.00,
+                category: "Casual",
+                image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=300&fit=crop&crop=center"
+            },
+            {
+                id: 3,
+                name: "Cole Haan",
+                brand: "Cole Haan",
+                price: 112.00,
+                category: "Formal",
+                image: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=300&h=300&fit=crop&crop=center"
+            },
+            {
+                id: 4,
+                name: "Merrell",
+                brand: "Merrell",
+                price: 120.00,
+                category: "Outdoor",
+                image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=300&h=300&fit=crop&crop=center"
+            },
+            {
+                id: 5,
+                name: "Jordan",
+                brand: "Jordan",
+                price: 150.00,
+                category: "Sports",
+                image: "https://images.unsplash.com/photo-1552346154-21d32810aba3?w=300&h=300&fit=crop&crop=center"
+            },
+            {
+                id: 6,
+                name: "Converse",
+                brand: "Converse",
+                price: 100.00,
+                category: "Casual",
+                image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=300&h=300&fit=crop&crop=center"
+            },
+            {
+                id: 7,
+                name: "Asics",
+                brand: "Asics",
+                price: 145.00,
+                category: "Running",
+                image: "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=300&h=300&fit=crop&crop=center"
+            },
+            {
+                id: 8,
+                name: "Dr. Martens",
+                brand: "Dr. Martens",
+                price: 85.00,
+                category: "Boots",
+                image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=300&h=300&fit=crop&crop=center"
+            }
+        ];
+
+        // API Service
+        class APIService {
+            static async fetchProducts() {
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    return mockProducts;
+                } catch (error) {
+                    console.error('Error fetching products:', error);
+                    throw error;
+                }
+            }
+        }
+
+        // Utility Functions
+        class Utils {
+            static getUniqueCategories(products) {
+                return [...new Set(products.map(product => product.category))];
+            }
+
+            static filterProducts(products, searchQuery, selectedCategory) {
+                let filtered = products;
+
+                if (searchQuery) {
+                    const query = searchQuery.toLowerCase();
+                    filtered = filtered.filter(product => 
+                        product.name.toLowerCase().includes(query) ||
+                        product.brand.toLowerCase().includes(query) ||
+                        product.category.toLowerCase().includes(query)
+                    );
+                }
+
+                if (selectedCategory) {
+                    filtered = filtered.filter(product => 
+                        product.category === selectedCategory
+                    );
+                }
+
+                return filtered;
+            }
+
+            static sortProducts(products, sortBy) {
+                const [sortField, sortOrder] = sortBy.split('-');
+                
+                return [...products].sort((a, b) => {
+                    let aValue = a[sortField];
+                    let bValue = b[sortField];
+
+                    if (sortField === 'name') {
+                        aValue = aValue.toLowerCase();
+                        bValue = bValue.toLowerCase();
+                    }
+
+                    if (sortOrder === 'asc') {
+                        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+                    } else {
+                        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+                    }
+                });
+            }
+        }
+
+        // UI Controller
+        class UIController {
+            static showLoading() {
+                document.getElementById('loading-state').classList.remove('hidden');
+                document.getElementById('product-grid').classList.remove('visible');
+                document.getElementById('no-results').classList.remove('visible');
+            }
+
+            static hideLoading() {
+                document.getElementById('loading-state').classList.add('hidden');
+            }
+
+            static showNoResults() {
+                document.getElementById('no-results').classList.add('visible');
+                document.getElementById('product-grid').classList.remove('visible');
+            }
+
+            static hideNoResults() {
+                document.getElementById('no-results').classList.remove('visible');
+            }
+
+            static showProductGrid() {
+                document.getElementById('product-grid').classList.add('visible');
+            }
+
+            static populateCategories(categories) {
+                const categoryList = document.getElementById('category-list');
+                
+                const allCategoriesActive = !AppState.selectedCategory ? 'active' : '';
+                let categoriesHTML = `
+                    <div class="category-item ${allCategoriesActive}" data-category="">
+                        <span class="category-name">All Categories</span>
+                    </div>
+                `;
+
+                categoriesHTML += categories.map(category => {
+                    const isActive = AppState.selectedCategory === category ? 'active' : '';
+                    return `
+                        <div class="category-item ${isActive}" data-category="${category}">
+                            <span class="category-name">${category}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                categoryList.innerHTML = categoriesHTML;
+
+                // Add click listeners to category options
+                categoryList.querySelectorAll('[data-category]').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const category = e.currentTarget.getAttribute('data-category');
+                        AppState.selectedCategory = category;
+                        UIController.updateFilterBadge(AppState.selectedCategory);
+                        App.updateFilteredProducts();
+                        UIController.hideFilterModal();
+                    });
+                });
+            }
+
+            static renderProducts(products) {
+                const productsContainer = document.getElementById('products-container');
+                
+                if (products.length === 0) {
+                    this.showNoResults();
+                    return;
+                }
+
+                this.hideNoResults();
+                this.showProductGrid();
+
+                productsContainer.innerHTML = products.map(product => `
+                    <div class="product-card">
+                        <div class="product-image-container">
+                            <img 
+                                src="${product.image}" 
+                                alt="${product.name}"
+                                class="product-image"
+                                loading="lazy"
+                            >
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">${product.name}</h3>
+                            <p class="product-price">RM ${product.price.toFixed(2)}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            static updateFilterBadge(selectedCategory) {
+                const filterBadge = document.getElementById('filter-badge');
+                if (selectedCategory) {
+                    filterBadge.classList.add('visible');
+                } else {
+                    filterBadge.classList.remove('visible');
+                }
+            }
+
+            static showFilterModal() {
+                document.getElementById('filter-modal').classList.add('visible');
+            }
+
+            static hideFilterModal() {
+                document.getElementById('filter-modal').classList.remove('visible');
+            }
+        }
+
+        // Main App Controller
+        class App {
+            static async init() {
+                try {
+                    UIController.showLoading();
+                    
+                    AppState.products = await APIService.fetchProducts();
+                    AppState.categories = Utils.getUniqueCategories(AppState.products);
+                    
+                    UIController.populateCategories(AppState.categories);
+                    this.updateFilteredProducts();
+                    this.setupEventListeners();
+                    
+                    UIController.hideLoading();
+                } catch (error) {
+                    console.error('Failed to initialize app:', error);
+                    UIController.hideLoading();
+                }
+            }
+
+            static setupEventListeners() {
+                // Search input
+                document.getElementById('search-input').addEventListener('input', (e) => {
+                    AppState.searchQuery = e.target.value;
+                    this.updateFilteredProducts();
+                });
+
+                // Sort select
+                document.getElementById('sort-select').addEventListener('change', (e) => {
+                    AppState.sortBy = e.target.value;
+                    this.updateFilteredProducts();
+                });
+
+                // Filter button
+                document.getElementById('filter-btn').addEventListener('click', () => {
+                    UIController.showFilterModal();
+                });
+
+                // Close filter modal
+                document.getElementById('close-filter').addEventListener('click', () => {
+                    UIController.hideFilterModal();
+                });
+
+                // Close modal by clicking overlay
+                document.getElementById('filter-modal').addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) {
+                        UIController.hideFilterModal();
+                    }
+                });
+
+                // Clear filters button
+                document.getElementById('clear-filters-btn').addEventListener('click', () => {
+                    this.clearFilters();
+                    UIController.hideFilterModal();
+                });
+            }
+
+            static updateFilteredProducts() {
+                let filtered = Utils.filterProducts(
+                    AppState.products, 
+                    AppState.searchQuery, 
+                    AppState.selectedCategory
+                );
+
+                filtered = Utils.sortProducts(filtered, AppState.sortBy);
+                AppState.filteredProducts = filtered;
+
+                UIController.renderProducts(AppState.filteredProducts);
+                UIController.populateCategories(AppState.categories);
+            }
+
+            static clearFilters() {
+                AppState.searchQuery = '';
+                AppState.selectedCategory = '';
+                
+                document.getElementById('search-input').value = '';
+                UIController.updateFilterBadge('');
+                this.updateFilteredProducts();
+            }
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            App.init();
+        });
+    </script>
+</body>
+</html>
